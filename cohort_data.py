@@ -1,5 +1,38 @@
 """Functions to parse a file containing student data."""
 
+def process_the_data_pack(filename):
+  """Return nice parsed data in the given file.
+
+  Arguments:
+      - filename (str): the path to a data file
+
+    Return:
+      - data_pack[list]: a list of lists where
+          data_pack[wizard_index][0] = first_name
+          data_pack[wizard_index][1] = last_name
+          data_pack[wizard_index][2] = house
+          data_pack[wizard_index][3] = head_of_house
+          data_pack[wizard_index][4] = cohort
+          data_pack[wizard_index][5] = name
+  """
+
+  wizard_school_data_pack = []
+
+  for line in open(filename):
+    line_pieces = line.split('|')
+
+    try:
+      # Strip the trailing carriage return
+      stripped_data = [wizard_data.strip() for wizard_data in line_pieces]
+      # Add the name
+      stripped_data.append(f"{stripped_data[0]} {stripped_data[1]}")
+      wizard_school_data_pack.append(stripped_data)
+    except TypeError:
+      # There's an extra line at the end of the file causing an empty list
+      continue
+
+  return wizard_school_data_pack
+
 
 def all_houses(filename):
     """Return a set of all house names in the given file.
@@ -12,17 +45,15 @@ def all_houses(filename):
       - filename (str): the path to a data file
 
     Return:
-      - set[str]: a set of strings
+      - houses[str]: a set of strings
     """
 
     houses = set()
 
-    # TODO: replace this with your code
-    for line in open(filename):
-      item = line.split('|')
-      if item[2] != '':
-        houses.add(item[2])
-    
+    for each_wizard in process_the_data_pack(filename):
+      this_wizards_house = each_wizard[2]
+      if this_wizards_house:  # Ghosts have no house in the data pack.
+        houses.add(this_wizards_house)
 
     return houses
 
@@ -52,21 +83,19 @@ def students_by_cohort(filename, cohort="All"):
       - cohort (str): optional, the name of a cohort
 
     Return:
-      - list[list]: a list of lists
+      - students[list]: a list of lists
     """
 
     students = []
 
-    for line in open(filename):
-      item = line.split('|')
-      if item[4] != "G\n" and item[4] != "I\n":
+    for each_wizard in process_the_data_pack(filename):
+      this_wizards_cohort = each_wizard[4]
+      if len(this_wizards_cohort) > 2:
         if cohort == "All":
-          students.append(f"{item[0]} {item[1]}")
-        elif cohort == item[4].strip():
-          students.append(f"{item[0]} {item[1]}")
-        else:
-          pass
-      
+          students.append(each_wizard[5])
+        if this_wizards_cohort == cohort:
+          students.append(each_wizard[5])
+
     return sorted(students)
 
 
@@ -98,7 +127,7 @@ def all_names_by_house(filename):
       - filename (str): the path to a data file
 
     Return:
-      - list[list]: a list of lists
+      - names_by_house[list]: a list of lists
     """
 
     dumbledores_army = []
@@ -109,24 +138,31 @@ def all_names_by_house(filename):
     ghosts = []
     instructors = []
 
-    for line in open(filename):
-      item = line.split('|')
-      if item[2] == "Dumbledore's Army":
-        dumbledores_army.append(f"{item[0]} {item[1]}")
-      elif item[2] == "Gryffindor":
-        gryffindor.append(f"{item[0]} {item[1]}")
-      elif item[2] == "Hufflepuff":
-        hufflepuff.append(f"{item[0]} {item[1]}")
-      elif item[2] == "Ravenclaw":
-        ravenclaw.append(f"{item[0]} {item[1]}")
-      elif item[2] == "Slytherin":
-        slytherin.append(f"{item[0]} {item[1]}")
-      elif item[4].strip() == 'G':
-        ghosts.append(f"{item[0]} {item[1]}")
-      elif item[4].strip() == 'I':
-        instructors.append(f"{item[0]} {item[1]}")
- 
-    return [sorted(dumbledores_army),sorted(gryffindor), sorted(hufflepuff), sorted(ravenclaw), sorted(slytherin), sorted(ghosts), sorted(instructors)]
+    for each_wizard in process_the_data_pack(filename):
+      this_wizards_house = each_wizard[2]
+      this_wizards_name = each_wizard[5]
+      non_student_role = each_wizard[4]
+      if this_wizards_house == "Dumbledore's Army":
+        dumbledores_army.append(this_wizards_name)
+      elif this_wizards_house == "Gryffindor":
+        gryffindor.append(this_wizards_name)
+      elif this_wizards_house == "Hufflepuff":
+        hufflepuff.append(this_wizards_name)
+      elif this_wizards_house == "Ravenclaw":
+        ravenclaw.append(this_wizards_name)
+      elif this_wizards_house == "Slytherin":
+        slytherin.append(this_wizards_name)
+      elif non_student_role == "G":
+        ghosts.append(this_wizards_name)
+      elif non_student_role == "I":
+        instructors.append(this_wizards_name)
+      else:
+        continue
+
+    names_by_house = (
+      [sorted(dumbledores_army), sorted(gryffindor), sorted(hufflepuff), 
+      sorted(ravenclaw), sorted(slytherin), sorted(ghosts), sorted(instructors)])
+    return names_by_house
 
 
 def all_data(filename):
@@ -145,21 +181,21 @@ def all_data(filename):
       - filename (str): the path to a data file
 
     Return:
-      - list[tuple]: a list of tuples
+      - all_wizarding_data[tuple]: a list of tuples
     """
 
-    all_data = []
+    all_wizarding_data = []
 
-    for line in open(filename):
-      items = line.split('|')
-      stripped_items = [item.strip() for item in items]
-      name = f"{stripped_items[0]} {stripped_items[1]}"
-      house = stripped_items[2]
-      head_of_house = stripped_items[3]
-      cohort = stripped_items[4]
-      all_data.append((name, house, head_of_house, cohort))
+    for each_wizard in process_the_data_pack(filename):
+      this_wizards_name = each_wizard[5]
+      this_wizards_house = each_wizard[2]
+      this_wizards_head_of_house = each_wizard[3]
+      this_wizards_cohort = each_wizard[4]
+      all_wizarding_data.append(
+        (this_wizards_name, this_wizards_house, this_wizards_head_of_house, 
+        this_wizards_cohort))
 
-    return all_data
+    return all_wizarding_data
 
 
 def get_cohort_for(filename, name):
@@ -183,12 +219,11 @@ def get_cohort_for(filename, name):
       - str: the person's cohort or None
     """
 
-    for line in open(filename):
-      items = line.split('|')
-      stripped_items = [item.strip() for item in items]
-      name_on_list = f"{stripped_items[0]} {stripped_items[1]}"
-      if name == name_on_list:
-        return stripped_items[4]
+    for each_wizard in process_the_data_pack(filename):
+      this_wizards_name = each_wizard[5]
+      this_wizards_cohort = each_wizard[4]
+      if name == this_wizards_name:
+        return this_wizards_cohort
 
 
 def find_duped_last_names(filename):
@@ -202,24 +237,24 @@ def find_duped_last_names(filename):
       - filename (str): the path to a data file
 
     Return:
-      - set[str]: a set of strings
+      - wizards_with_siblings{str}: a set of strings
     """
-    super_dupers = set()
-    list_of_last_names = list()
 
-    for line in open(filename):
-      items = line.split('|')
-      stripped_items = [item.strip() for item in items]
-      list_of_last_names.append(stripped_items[1])
-      
-    another_empty_list = list()
-    for each_last_name in list_of_last_names:
-      if each_last_name not in another_empty_list:
-        another_empty_list.append(each_last_name)
+    wizards_with_siblings = set()
+    all_wizarding_last_names = list()
+
+    for each_wizard in process_the_data_pack(filename):
+      this_wizards_last_name = each_wizard[1]
+      all_wizarding_last_names.append(this_wizards_last_name)
+
+    a_list_for_checking_dupes = list()
+    for each_wizarding_last_name in all_wizarding_last_names:
+      if each_wizarding_last_name not in a_list_for_checking_dupes:
+        a_list_for_checking_dupes.append(each_wizarding_last_name)
       else:
-        super_dupers.add(each_last_name)
+        wizards_with_siblings.add(each_wizarding_last_name)
 
-    return super_dupers
+    return wizards_with_siblings
 
 
 def get_housemates_for(filename, name):
@@ -232,27 +267,36 @@ def get_housemates_for(filename, name):
     For example:
     >>> get_housemates_for('cohort_data.txt', 'Hermione Granger')
     {'Angelina Johnson', ..., 'Seamus Finnigan'}
+
+    Arguments:
+      - filename (str): the path to a data file
+      - name (str): a person's full name
+
+    Return:
+      - housemates{str}: a set of strings
     """
+
     housemates = set()
-    
-    for line in open(filename):
-      items = line.split('|')
-      stripped_items = [item.strip() for item in items]
-      name_on_list = f"{stripped_items[0]} {stripped_items[1]}"
-      if name == name_on_list:
-        house = stripped_items[2]
-        cohort = stripped_items[4]
+
+    inquiry_wizards_house = ""
+    inquiry_wizards_cohort = ""
+    for each_wizard in process_the_data_pack(filename):
+      this_wizards_name = each_wizard[5]
+      if this_wizards_name == name:
+        inquiry_wizards_house = each_wizard[2]
+        inquiry_wizards_cohort = each_wizard[4]
 
 
-    for line in open(filename):
-      items = line.split('|')
-      stripped_items = [item.strip() for item in items]
-      for item in stripped_items:
-        if stripped_items[4] == cohort and stripped_items[2] == house and f"{stripped_items[0]} {stripped_items[1]}" != name:
-          housemates.add(f"{stripped_items[0]} {stripped_items[1]}")
+    for each_wizard in process_the_data_pack(filename):
+      this_wizards_cohort = each_wizard[4]
+      this_wizards_house = each_wizard[2]
+      this_wizards_name = each_wizard[5]
+      if this_wizards_cohort == inquiry_wizards_cohort and (
+        this_wizards_house == inquiry_wizards_house) and (
+          this_wizards_name != name):
+        housemates.add(this_wizards_name)
 
     return housemates
-      
 
 
 
@@ -270,4 +314,4 @@ if __name__ == "__main__":
     )
     doctest.master.summarize(1)
     if result.failed == 0:
-        print("ALL TESTS PASSED")
+        print("EXPECTO PATRONUM!")
